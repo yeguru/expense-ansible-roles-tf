@@ -1,0 +1,77 @@
+- name: disable present nodejs
+  ansible.builtin.command: dnf module disable nodejs -y
+
+- name: enable the nodejs version 20
+  ansible.builtin.command: dnf module enable nodejs:20 -y
+
+- name: install nodejs and mysql server
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop:
+  - nodejs
+  - mysql
+
+- name: add expense user
+  ansible.builtin.user:
+    name: expense
+- name: include from common role
+  # tags:
+  #   - deployment
+  include_role:
+   name: common
+   tasks_from: main
+
+
+# - name: create a app directory
+#   ansible.builtin.file:
+#     name: /app
+#     state: directory
+
+# - name: Download the application code to created app directory
+#   ansible.builtin.get_url:
+#     url: https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
+#     dest: /tmp/backend.zip
+
+# - name: unzip the downloaded expense backend file in to the app folder
+#   ansible.builtin.unarchive:
+#     src: /tmp/backend.zip
+#     dest: /app
+#     remote_src: yes
+
+- name: insatll dependencies 
+  tags:
+    - deployment
+  community.general.npm:
+    path: /app
+
+- name: copy the backend service file to the mentioned path in the destination
+  ansible.builtin.template: #It will search in templates folder
+    src: backend.service.j2
+    dest: /etc/systemd/system/backend.service
+
+- name: installing the required libs to phython as PyMySQL and cryptography 
+  ansible.builtin.pip:
+    name: "{{ item }}"
+    executable: pip3.9
+  loop:
+  - PyMySQL
+  - cryptography
+  
+- name: import my sql data
+  community.mysql.mysql_db:
+    state: import
+    name: all
+    login_user: "{{ MYSQL_USER }}"
+    login_password: "{{ MYSQL_PASSWORD }}"
+    login_host: "{{ MYSQL_HOST }}"
+    target: /app/schema/backend.sql
+
+- name: reloading the daemon and restarting the service
+  tags:
+    - deployment
+  ansible.builtin.systemd_service:
+    enabled: true
+    state: restarted
+    daemon_reload: true
+    name: backend
