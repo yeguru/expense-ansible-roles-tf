@@ -15,29 +15,6 @@
 - name: add expense user
   ansible.builtin.user:
     name: expense
-# - name: include from common role
-#   # tags:
-#   #   - deployment
-#   include_role:
-#    name: common
-#    tasks_from: main
-
-
-# - name: create a app directory
-#   ansible.builtin.file:
-#     name: /app
-#     state: directory
-
-# - name: Download the application code to created app directory
-#   ansible.builtin.get_url:
-#     url: https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
-#     dest: /tmp/backend.zip
-
-# - name: unzip the downloaded expense backend file in to the app folder
-#   ansible.builtin.unarchive:
-#     src: /tmp/backend.zip
-#     dest: /app
-#     remote_src: yes
 
 - name: insatll dependencies 
   tags:
