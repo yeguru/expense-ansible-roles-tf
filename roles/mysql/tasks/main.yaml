@@ -18,18 +18,29 @@
     state: started
     enabled: yes 
 
-- name: to login to the mysql server with valid username and password
+# - name: to login to the mysql server with valid username and password
+#   community.mysql.mysql_info:
+#     login_user: root
+#     login_password: "{{ mysql_root_password }}"
+#     login_host: "{{ mysql_host }}"
+#   register: mysql_info
+#   ignore_errors: true
+
+- name: connect to mysql server
   community.mysql.mysql_info:
     login_user: root
-    login_password: "{{ mysql_root_password }}"
+    login_password: "{{ lookup('amazon.aws.aws_ssm', '/expense/mysql/mysql_root_password', decrypt=True ) }}"
     login_host: "{{ mysql_host }}"
   register: mysql_info
-  ignore_errors: true
+  ignore_errors: true  
 
 - name: to display the mysql status
   ansible.builtin.debug:
     msg: "My SQL information is: {{ mysql_info }}"     
 
-- name: to setup username and password
-  ansible.builtin.command: " mysql_secure_installation --set-root-pass {{ mysql_root_password }} "   
-  when: mysql_info.failed is true
+# - name: to setup username and password
+#   ansible.builtin.command: " mysql_secure_installation --set-root-pass {{ mysql_root_password }} "   
+#   when: mysql_info.failed is true
+- name: setup root password
+  ansible.builtin.command: " mysql_secure_installation --set-root-pass {{ lookup('amazon.aws.aws_ssm', '/expense/mysql/mysql_root_password', decrypt=True ) }} "
+  when: mysql_info.failed is true  
